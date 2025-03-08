@@ -7,15 +7,26 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
+import { RootStackParamList } from '../navigation';
 import { STORAGE_KEYS } from '../constants';
 import { scheduleReviewNotification } from '../services/notifications';
 import { getLearningStats } from '../services/database';
+import { resetVocabularyOnly, resetAllStorage } from '../utils/resetStorage';
+import { COLORS, SHADOWS, SIZES } from '../constants/theme';
+
+// Definição do tipo de navegação para esta tela
+type SettingsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
 
 const SettingsScreen: React.FC = () => {
+  const navigation = useNavigation<SettingsScreenNavigationProp>();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [notificationTime, setNotificationTime] = useState<Date>(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -81,16 +92,46 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
+  // Função para resetar o vocabulário
+  const handleResetVocabulary = () => {
+    Alert.alert(
+      'Resetar Vocabulário',
+      'Isso irá apagar todo o seu progresso de aprendizado. Esta ação não pode ser desfeita. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Resetar', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await resetVocabularyOnly();
+              Alert.alert('Sucesso', 'Vocabulário resetado com sucesso. O aplicativo será reiniciado.');
+              // Navegar de volta para a tela inicial para forçar o recarregamento
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }],
+              });
+            } catch (error) {
+              console.error('Erro ao resetar vocabulário:', error);
+              Alert.alert('Erro', 'Falha ao resetar vocabulário.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Carregando configurações...</Text>
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={COLORS.primary.main} />
+        <Text style={styles.loadingText}>Carregando configurações...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <Text style={styles.title}>Configurações</Text>
       
       <View style={styles.section}>
@@ -101,8 +142,8 @@ const SettingsScreen: React.FC = () => {
           <Switch
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
-            trackColor={{ false: '#767577', true: '#81c784' }}
-            thumbColor={notificationsEnabled ? '#4caf50' : '#f4f3f4'}
+            trackColor={{ false: COLORS.neutral.light, true: COLORS.primary.light }}
+            thumbColor={notificationsEnabled ? COLORS.primary.main : COLORS.neutral.main}
           />
         </View>
         
@@ -113,7 +154,7 @@ const SettingsScreen: React.FC = () => {
               style={styles.timeButton}
               onPress={() => setShowTimePicker(true)}
             >
-              <Text>
+              <Text style={styles.timeText}>
                 {notificationTime.getHours().toString().padStart(2, '0')}:
                 {notificationTime.getMinutes().toString().padStart(2, '0')}
               </Text>
@@ -140,6 +181,20 @@ const SettingsScreen: React.FC = () => {
       </TouchableOpacity>
       
       <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Gerenciamento de Dados</Text>
+        <Text style={styles.warningText}>
+          As opções abaixo irão apagar seus dados. Use com cuidado!
+        </Text>
+        
+        <TouchableOpacity 
+          style={styles.resetButton}
+          onPress={handleResetVocabulary}
+        >
+          <Text style={styles.resetButtonText}>Resetar Vocabulário</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.section}>
         <Text style={styles.sectionTitle}>Sobre o Aplicativo</Text>
         <Text style={styles.aboutText}>
           Este aplicativo utiliza o sistema de repetição espaçada para ajudar você a memorizar palavras em inglês de forma eficiente.
@@ -149,88 +204,111 @@ const SettingsScreen: React.FC = () => {
         </Text>
         <Text style={styles.versionText}>Versão 1.0.0</Text>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 16,
+    backgroundColor: COLORS.background.main,
+  },
+  contentContainer: {
+    padding: SIZES.spacing.medium,
+    paddingBottom: SIZES.spacing.xl, // Espaço extra no final para o scroll
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: SIZES.spacing.medium,
+    fontSize: SIZES.fontSize.medium,
+    color: COLORS.text.secondary,
   },
   title: {
-    fontSize: 24,
+    fontSize: SIZES.fontSize.header,
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: SIZES.spacing.large,
+    color: COLORS.text.primary,
   },
   section: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: COLORS.background.card,
+    borderRadius: SIZES.borderRadius.large,
+    padding: SIZES.spacing.medium,
+    marginBottom: SIZES.spacing.large,
+    ...SHADOWS.small,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: SIZES.fontSize.large,
     fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#4caf50',
+    marginBottom: SIZES.spacing.medium,
+    color: COLORS.primary.main,
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 8,
+    marginBottom: SIZES.spacing.medium,
+    paddingVertical: SIZES.spacing.small,
   },
   settingLabel: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: SIZES.fontSize.medium,
+    color: COLORS.text.primary,
   },
   timeButton: {
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: COLORS.background.main,
+    paddingHorizontal: SIZES.spacing.medium,
+    paddingVertical: SIZES.spacing.small,
+    borderRadius: SIZES.borderRadius.medium,
+    ...SHADOWS.small,
+  },
+  timeText: {
+    color: COLORS.text.primary,
+    fontSize: SIZES.fontSize.medium,
   },
   saveButton: {
-    backgroundColor: '#4caf50',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: COLORS.primary.main,
+    borderRadius: SIZES.borderRadius.large,
+    padding: SIZES.spacing.medium,
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: SIZES.spacing.large,
+    ...SHADOWS.small,
   },
   saveButtonText: {
-    color: 'white',
+    color: COLORS.text.contrast,
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: SIZES.fontSize.large,
+  },
+  resetButton: {
+    backgroundColor: COLORS.accent.main,
+    borderRadius: SIZES.borderRadius.large,
+    padding: SIZES.spacing.medium,
+    alignItems: 'center',
+    marginTop: SIZES.spacing.medium,
+    ...SHADOWS.small,
+  },
+  resetButtonText: {
+    color: COLORS.text.contrast,
+    fontWeight: 'bold',
+    fontSize: SIZES.fontSize.medium,
+  },
+  warningText: {
+    color: COLORS.accent.main,
+    fontSize: SIZES.fontSize.small,
+    marginBottom: SIZES.spacing.small,
   },
   aboutText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    fontSize: SIZES.fontSize.small,
+    color: COLORS.text.secondary,
+    marginBottom: SIZES.spacing.small,
     lineHeight: 20,
   },
   versionText: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 16,
+    fontSize: SIZES.fontSize.small,
+    color: COLORS.text.hint,
+    marginTop: SIZES.spacing.medium,
     textAlign: 'center',
   },
 });

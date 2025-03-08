@@ -1,18 +1,35 @@
 import React from 'react';
 import { StyleSheet, View, Text } from 'react-native';
+import { COLORS, SIZES } from '../constants/theme';
 
 interface ProgressBarProps {
   current: number;
   total: number;
   label?: string;
   color?: string;
+  height?: number;
+  showPercentage?: boolean;
+  showFraction?: boolean;
 }
 
+/**
+ * Componente de barra de progresso personalizado
+ * @param current - Valor atual do progresso
+ * @param total - Valor total para completar o progresso
+ * @param label - Texto opcional para exibir acima da barra
+ * @param color - Cor personalizada para a barra (usa a cor primária por padrão)
+ * @param height - Altura da barra de progresso (padrão: 10)
+ * @param showPercentage - Se deve mostrar a porcentagem (padrão: false)
+ * @param showFraction - Se deve mostrar a fração atual/total (padrão: false)
+ */
 const ProgressBar: React.FC<ProgressBarProps> = ({
   current,
   total,
   label,
-  color = '#4caf50',
+  color = COLORS.primary.main,
+  height = 10,
+  showPercentage = false,
+  showFraction = false,
 }) => {
   // Calcula a porcentagem de progresso
   const percentage = Math.min(100, Math.round((current / total) * 100)) || 0;
@@ -21,16 +38,24 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
       
-      <View style={styles.progressContainer}>
+      <View style={[styles.progressContainer, { height }]}>
         <View 
           style={[
             styles.progressBar, 
-            { width: `${percentage}%`, backgroundColor: color }
+            { width: `${percentage}%`, backgroundColor: color, height }
           ]}
         />
       </View>
       
-      <Text style={styles.percentageText}>{percentage}%</Text>
+      {showPercentage && (
+        <Text style={styles.percentageText}>{percentage}%</Text>
+      )}
+      
+      {showFraction && (
+        <Text style={styles.fractionText}>
+          {current} / {total}
+        </Text>
+      )}
     </View>
   );
 };
@@ -38,29 +63,34 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginVertical: 10,
+    marginVertical: SIZES.spacing.small,
   },
   label: {
-    fontSize: 14,
-    marginBottom: 5,
-    color: '#666',
+    fontSize: SIZES.fontSize.medium,
+    marginBottom: SIZES.spacing.xs,
+    color: COLORS.text.secondary,
   },
   progressContainer: {
-    height: 12,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 6,
+    backgroundColor: COLORS.neutral.light,
+    borderRadius: 20, // Forma mais arredondada para a barra
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: 20,
   },
   percentageText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: SIZES.fontSize.small,
+    color: COLORS.text.secondary,
     textAlign: 'right',
-    marginTop: 4,
+    marginTop: SIZES.spacing.xs,
   },
+  fractionText: {
+    fontSize: SIZES.fontSize.small,
+    color: COLORS.text.secondary,
+    textAlign: 'right',
+    marginTop: SIZES.spacing.xs,
+  }
 });
 
 export default ProgressBar;

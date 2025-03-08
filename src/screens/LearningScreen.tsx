@@ -12,10 +12,17 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { RootStackParamList } from '../navigation';
-import { getWordsToLearn, markWordAsLearned } from '../services/database';
+import { 
+  getWordsToLearn, 
+  markWordAsLearned, 
+  getNextLearningDay,
+  checkDayCompletion,
+  getWordsForDay
+} from '../services/database';
 import WordCard from '../components/WordCard';
 import { DAILY_WORDS_COUNT } from '../constants';
 import { Word } from '../types';
+import { COLORS, SHADOWS, SIZES } from '../constants/theme';
 
 type LearningScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Learning'>;
 
@@ -25,23 +32,28 @@ const LearningScreen: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [completed, setCompleted] = useState(false);
+  const [currentDay, setCurrentDay] = useState<number>(1);
 
   useEffect(() => {
     const loadWords = async () => {
       try {
-        // Carregar palavras para aprender
-        const wordsToLearn = await getWordsToLearn(DAILY_WORDS_COUNT);
+        // Determinar qual é o próximo dia a ser aprendido
+        const nextDay = await getNextLearningDay();
+        setCurrentDay(nextDay);
         
-        if (wordsToLearn.length === 0) {
+        // Carregar palavras para esse dia
+        const dayWords = await getWordsForDay(nextDay);
+        
+        if (dayWords.length === 0) {
           Alert.alert(
             'Sem Palavras',
-            'Você já aprendeu todas as palavras disponíveis!',
+            `Não há palavras disponíveis para o dia ${nextDay}! Você concluiu todos os dias disponíveis.`,
             [{ text: 'Voltar', onPress: () => navigation.goBack() }]
           );
           return;
         }
         
-        setWords(wordsToLearn);
+        setWords(dayWords);
       } catch (error) {
         console.error('Erro ao carregar palavras:', error);
         Alert.alert('Erro', 'Falha ao carregar palavras para aprender.');
@@ -63,6 +75,8 @@ const LearningScreen: React.FC = () => {
       if (currentIndex < words.length - 1) {
         setCurrentIndex(currentIndex + 1);
       } else {
+        // Verificar se todas as palavras do dia foram aprendidas
+        const dayCompleted = await checkDayCompletion(currentDay);
         setCompleted(true);
       }
     } catch (error) {
@@ -84,7 +98,7 @@ const LearningScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#4caf50" />
+        <ActivityIndicator size="large" color={COLORS.primary.main} />
         <Text style={styles.loadingText}>Carregando palavras...</Text>
       </View>
     );
@@ -94,8 +108,10 @@ const LearningScreen: React.FC = () => {
     return (
       <View style={[styles.container, styles.centered]}>
         <Text style={styles.completedTitle}>Sessão de Aprendizado Concluída!</Text>
+        <Text style={styles.dayText}>Dia {currentDay}</Text>
         <Text style={styles.completedText}>
-          Você completou a sessão de aprendizado de hoje.
+          Você completou a sessão de aprendizado para o dia {currentDay}.
+          Continue praticando para fixar as palavras!
         </Text>
         <TouchableOpacity 
           style={styles.homeButton} 
@@ -109,6 +125,7 @@ const LearningScreen: React.FC = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.dayText}>Dia {currentDay}</Text>
       <Text style={styles.progressText}>
         Palavra {currentIndex + 1} de {words.length}
       </Text>
@@ -134,54 +151,63 @@ const LearningScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 16,
+    backgroundColor: COLORS.background.main,
+    padding: SIZES.spacing.medium,
     alignItems: 'center',
   },
   centered: {
     justifyContent: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: SIZES.spacing.medium,
+    fontSize: SIZES.fontSize.medium,
+    color: COLORS.text.secondary,
   },
   progressText: {
-    fontSize: 18,
-    color: '#666',
-    marginVertical: 16,
+    fontSize: SIZES.fontSize.large,
+    color: COLORS.text.secondary,
+    marginVertical: SIZES.spacing.medium,
+  },
+  dayText: {
+    fontSize: SIZES.fontSize.xxl,
+    fontWeight: 'bold',
+    color: COLORS.primary.main,
+    marginTop: SIZES.spacing.small,
+    marginBottom: SIZES.spacing.small,
   },
   skipButton: {
-    marginTop: 32,
-    padding: 16,
+    marginTop: SIZES.spacing.xl,
+    padding: SIZES.spacing.medium,
   },
   skipButtonText: {
-    color: '#888',
-    fontSize: 16,
+    color: COLORS.text.hint,
+    fontSize: SIZES.fontSize.medium,
   },
   completedTitle: {
-    fontSize: 24,
+    fontSize: SIZES.fontSize.xxl,
     fontWeight: 'bold',
-    color: '#4caf50',
-    marginBottom: 16,
+    color: COLORS.primary.main,
+    marginBottom: SIZES.spacing.small,
   },
   completedText: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
+    fontSize: SIZES.fontSize.medium,
+    color: COLORS.text.secondary,
+    marginBottom: SIZES.spacing.xl,
     textAlign: 'center',
+    paddingHorizontal: SIZES.spacing.medium,
   },
   homeButton: {
-    backgroundColor: '#4caf50',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: COLORS.primary.main,
+    borderRadius: SIZES.borderRadius.large,
+    padding: SIZES.spacing.medium,
     minWidth: 200,
     alignItems: 'center',
+    ...SHADOWS.small,
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.text.contrast,
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: SIZES.fontSize.large,
   },
 });
 

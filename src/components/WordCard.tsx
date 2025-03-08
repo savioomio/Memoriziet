@@ -7,6 +7,7 @@ import {
   Animated,
 } from 'react-native';
 import { Word } from '../types';
+import { COLORS, SHADOWS, SIZES } from '../constants/theme';
 
 interface WordCardProps {
   word: Word;
@@ -92,70 +93,67 @@ const WordCard: React.FC<WordCardProps> = ({ word, onRemembered, onForgotten }) 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: SIZES.spacing.medium,
   },
   cardContainer: {
     width: 300,
     height: 200,
-    marginBottom: 16,
+    marginBottom: SIZES.spacing.medium,
   },
   card: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: SIZES.borderRadius.large,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'absolute',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...SHADOWS.medium,
   },
   cardFront: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background.card,
   },
   cardBack: {
-    backgroundColor: '#e0f7fa',
+    backgroundColor: COLORS.primary.light,
   },
   wordText: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: SIZES.spacing.medium,
+    color: COLORS.text.primary,
   },
   translationText: {
     fontSize: 28,
     fontWeight: 'bold',
+    color: COLORS.text.primary,
   },
   hintText: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: SIZES.fontSize.small,
+    color: COLORS.text.hint,
   },
   buttonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginTop: 16,
+    marginTop: SIZES.spacing.medium,
   },
   button: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 8,
+    borderRadius: SIZES.borderRadius.medium,
     minWidth: 120,
     alignItems: 'center',
+    ...SHADOWS.small,
   },
   forgotButton: {
-    backgroundColor: '#ffcdd2',
+    backgroundColor: COLORS.accent.light,
   },
   rememberedButton: {
-    backgroundColor: '#c8e6c9',
+    backgroundColor: COLORS.primary.light,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: SIZES.fontSize.medium,
     fontWeight: 'bold',
+    color: COLORS.text.primary,
   },
 });
 

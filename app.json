@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/logo.jpg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#359894"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -21,7 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.jpg",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#359894"
       }
     },
     "web": {
@@ -32,7 +32,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icone.png",
-          "color": "#ffffff"
+          "color": "#359894"
         }
       ]
     ]

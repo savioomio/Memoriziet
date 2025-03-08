@@ -8,10 +8,12 @@ export interface Word {
   learningDate: Date | null;
   reviewInterval: number;
   nextReviewDate: Date | null;
+  day?: number; // Dia a que a palavra pertence
 }
 
 export interface LearningStats {
   totalWords: number;
   learnedWords: number;
   wordsToReview: number;
+  lastCompletedDay?: number; // Último dia de palavras completado
 }

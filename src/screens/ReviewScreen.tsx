@@ -15,6 +15,7 @@ import { RootStackParamList } from '../navigation';
 import { getWordsToReview, updateWordReview } from '../services/database';
 import WordCard from '../components/WordCard';
 import { Word } from '../types';
+import { COLORS, SHADOWS, SIZES } from '../constants/theme';
 
 type ReviewScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Review'>;
 
@@ -107,7 +108,7 @@ const ReviewScreen: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#2196f3" />
+        <ActivityIndicator size="large" color={COLORS.secondary.main} />
         <Text style={styles.loadingText}>Carregando palavras para revisão...</Text>
       </View>
     );
@@ -172,69 +173,73 @@ const ReviewScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 16,
+    backgroundColor: COLORS.background.main,
+    padding: SIZES.spacing.medium,
     alignItems: 'center',
   },
   centered: {
     justifyContent: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: SIZES.spacing.medium,
+    fontSize: SIZES.fontSize.medium,
+    color: COLORS.text.secondary,
   },
   progressText: {
-    fontSize: 18,
-    color: '#666',
-    marginVertical: 16,
+    fontSize: SIZES.fontSize.large,
+    color: COLORS.text.secondary,
+    marginVertical: SIZES.spacing.medium,
   },
   skipButton: {
-    marginTop: 32,
-    padding: 16,
+    marginTop: SIZES.spacing.xl,
+    padding: SIZES.spacing.medium,
   },
   skipButtonText: {
-    color: '#888',
-    fontSize: 16,
+    color: COLORS.text.hint,
+    fontSize: SIZES.fontSize.medium,
   },
   completedTitle: {
-    fontSize: 24,
+    fontSize: SIZES.fontSize.xxl,
     fontWeight: 'bold',
-    color: '#2196f3',
-    marginBottom: 16,
+    color: COLORS.secondary.main,
+    marginBottom: SIZES.spacing.medium,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginBottom: 32,
+    marginBottom: SIZES.spacing.xl,
   },
   statItem: {
     alignItems: 'center',
-    padding: 16,
+    padding: SIZES.spacing.medium,
     minWidth: 80,
+    backgroundColor: COLORS.background.card,
+    borderRadius: SIZES.borderRadius.medium,
+    ...SHADOWS.small,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: SIZES.fontSize.xxl,
     fontWeight: 'bold',
-    color: '#2196f3',
+    color: COLORS.secondary.main,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
+    fontSize: SIZES.fontSize.small,
+    color: COLORS.text.secondary,
+    marginTop: SIZES.spacing.small,
   },
   homeButton: {
-    backgroundColor: '#2196f3',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: COLORS.secondary.main,
+    borderRadius: SIZES.borderRadius.large,
+    padding: SIZES.spacing.medium,
     minWidth: 200,
     alignItems: 'center',
+    ...SHADOWS.small,
   },
   buttonText: {
-    color: 'white',
+    color: COLORS.text.contrast,
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: SIZES.fontSize.large,
   },
 });
 

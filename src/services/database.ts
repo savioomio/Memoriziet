@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Word, LearningStats } from '../types';
 import { REVIEW_INTERVALS } from '../constants';
+import { getLastAvailableDay } from '../utils/wordUtils';
 
 // Chaves para o AsyncStorage
 const STORAGE_KEYS = {
   WORDS: 'vocabulary_words',
+  STATS: 'vocabulary_stats',
 };
 
 /**
@@ -19,6 +21,20 @@ export const initDatabase = async (): Promise<void> => {
       // Se não houver palavras, inicializar com um array vazio
       await AsyncStorage.setItem(STORAGE_KEYS.WORDS, JSON.stringify([]));
     }
+    
+    // Verificar se já temos estatísticas armazenadas
+    const statsStr = await AsyncStorage.getItem(STORAGE_KEYS.STATS);
+    if (!statsStr) {
+      // Se não houver estatísticas, inicializar com valores padrão
+      const initialStats: LearningStats = {
+        totalWords: 0,
+        learnedWords: 0,
+        wordsToReview: 0,
+        lastCompletedDay: 0
+      };
+      await AsyncStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(initialStats));
+    }
+    
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
@@ -34,7 +50,13 @@ const getAllWords = async (): Promise<Word[]> => {
     const wordsStr = await AsyncStorage.getItem(STORAGE_KEYS.WORDS);
     if (!wordsStr) return [];
     
-    return JSON.parse(wordsStr) as Word[];
+    // Garantir que as datas sejam convertidas corretamente
+    const words = JSON.parse(wordsStr) as Word[];
+    return words.map(word => ({
+      ...word,
+      learningDate: word.learningDate ? new Date(word.learningDate) : null,
+      nextReviewDate: word.nextReviewDate ? new Date(word.nextReviewDate) : null
+    }));
   } catch (error) {
     console.error('Error getting all words:', error);
     return [];
@@ -49,6 +71,44 @@ const saveAllWords = async (words: Word[]): Promise<void> => {
     await AsyncStorage.setItem(STORAGE_KEYS.WORDS, JSON.stringify(words));
   } catch (error) {
     console.error('Error saving all words:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtém as estatísticas de aprendizado
+ */
+export const getStats = async (): Promise<LearningStats> => {
+  try {
+    const statsStr = await AsyncStorage.getItem(STORAGE_KEYS.STATS);
+    if (!statsStr) {
+      return {
+        totalWords: 0,
+        learnedWords: 0,
+        wordsToReview: 0,
+        lastCompletedDay: 0
+      };
+    }
+    return JSON.parse(statsStr) as LearningStats;
+  } catch (error) {
+    console.error('Error getting stats:', error);
+    return {
+      totalWords: 0,
+      learnedWords: 0,
+      wordsToReview: 0,
+      lastCompletedDay: 0
+    };
+  }
+};
+
+/**
+ * Salva as estatísticas de aprendizado
+ */
+export const saveStats = async (stats: LearningStats): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(stats));
+  } catch (error) {
+    console.error('Error saving stats:', error);
     throw error;
   }
 };
@@ -81,16 +141,43 @@ export const saveWord = async (word: Word): Promise<void> => {
 };
 
 /**
- * Obtém palavras que ainda não foram aprendidas
+ * Obtém palavras para um dia específico que ainda não foram aprendidas
  */
-export const getWordsToLearn = async (limit: number): Promise<Word[]> => {
+export const getWordsForDay = async (day: number): Promise<Word[]> => {
   try {
     const words = await getAllWords();
-    const wordsToLearn = words
-      .filter(word => !word.learned)
-      .slice(0, limit);
+    const dayWords = words.filter(word => word.day === day && !word.learned);
+    console.log(`Retrieved ${dayWords.length} words for day ${day}`);
+    return dayWords;
+  } catch (error) {
+    console.error(`Error getting words for day ${day}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Obtém palavras que ainda não foram aprendidas
+ * (todas as palavras ou limitadas a um dia específico)
+ */
+export const getWordsToLearn = async (limit: number, day?: number): Promise<Word[]> => {
+  try {
+    const words = await getAllWords();
+    let wordsToLearn;
+    
+    if (day) {
+      // Filtrar palavras para um dia específico
+      wordsToLearn = words.filter(word => word.day === day && !word.learned);
+    } else {
+      // Obter todas as palavras não aprendidas
+      wordsToLearn = words.filter(word => !word.learned);
+    }
+    
+    // Aplicar o limite se necessário
+    if (limit > 0) {
+      wordsToLearn = wordsToLearn.slice(0, limit);
+    }
       
-    console.log(`Retrieved ${wordsToLearn.length} words to learn`);
+    console.log(`Retrieved ${wordsToLearn.length} words to learn${day ? ` for day ${day}` : ''}`);
     return wordsToLearn;
   } catch (error) {
     console.error('Error getting words to learn:', error);
@@ -143,10 +230,44 @@ export const markWordAsLearned = async (word: Word): Promise<void> => {
     };
     
     await saveWord(updatedWord);
+    
+    // Atualizar as estatísticas
+    await updateLearningStats();
+    
     console.log(`Word marked as learned: ${word.word}`);
   } catch (error) {
     console.error(`Error marking word as learned: ${word.word}`, error);
     throw error;
+  }
+};
+
+/**
+ * Verifica se todas as palavras de um dia foram aprendidas
+ * e atualiza o último dia concluído se necessário
+ */
+export const checkDayCompletion = async (day: number): Promise<boolean> => {
+  try {
+    const words = await getAllWords();
+    const dayWords = words.filter(word => word.day === day);
+    
+    if (dayWords.length === 0) return false;
+    
+    const allLearned = dayWords.every(word => word.learned);
+    
+    if (allLearned) {
+      // Atualizar o último dia concluído
+      const stats = await getStats();
+      if (day > (stats.lastCompletedDay || 0)) {
+        stats.lastCompletedDay = day;
+        await saveStats(stats);
+        console.log(`Day ${day} completed!`);
+      }
+    }
+    
+    return allLearned;
+  } catch (error) {
+    console.error(`Error checking day completion for day ${day}:`, error);
+    return false;
   }
 };
 
@@ -200,9 +321,9 @@ export const updateWordReview = async (word: Word, remembered: boolean): Promise
 };
 
 /**
- * Obtém estatísticas de aprendizado
+ * Atualiza as estatísticas de aprendizado
  */
-export const getLearningStats = async (): Promise<LearningStats> => {
+export const updateLearningStats = async (): Promise<LearningStats> => {
   try {
     const words = await getAllWords();
     const today = new Date();
@@ -216,14 +337,32 @@ export const getLearningStats = async (): Promise<LearningStats> => {
       new Date(word.nextReviewDate) <= today
     ).length;
     
-    const stats = {
+    // Obter estatísticas atuais para preservar lastCompletedDay
+    const currentStats = await getStats();
+    
+    const stats: LearningStats = {
       totalWords,
       learnedWords,
-      wordsToReview
+      wordsToReview,
+      lastCompletedDay: currentStats.lastCompletedDay || 0
     };
     
-    console.log('Learning stats retrieved:', stats);
+    await saveStats(stats);
+    console.log('Learning stats updated:', stats);
     return stats;
+  } catch (error) {
+    console.error('Error updating learning stats:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtém estatísticas de aprendizado
+ */
+export const getLearningStats = async (): Promise<LearningStats> => {
+  try {
+    // Atualiza e retorna as estatísticas atualizadas
+    return await updateLearningStats();
   } catch (error) {
     console.error('Error getting learning stats:', error);
     throw error;
@@ -240,5 +379,32 @@ export const hasWords = async (): Promise<boolean> => {
   } catch (error) {
     console.error('Error checking if database has words:', error);
     throw error;
+  }
+};
+
+/**
+ * Verifica se o usuário concluiu todos os dias disponíveis
+ */
+export const hasCompletedAllDays = async (): Promise<boolean> => {
+  try {
+    const stats = await getStats();
+    const lastAvailableDay = getLastAvailableDay();
+    return (stats.lastCompletedDay || 0) >= lastAvailableDay;
+  } catch (error) {
+    console.error('Error checking if all days are completed:', error);
+    return false;
+  }
+};
+
+/**
+ * Obtém o próximo dia de palavras que o usuário deve aprender
+ */
+export const getNextLearningDay = async (): Promise<number> => {
+  try {
+    const stats = await getStats();
+    return (stats.lastCompletedDay || 0) + 1;
+  } catch (error) {
+    console.error('Error getting next learning day:', error);
+    return 1; // Começa do dia 1 em caso de erro
   }
 };
