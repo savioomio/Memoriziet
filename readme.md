@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2983652f-c30d-40e4-ad2b-657475bf00a3" width="200" height="200"/>
+</p>
+
 # Aplicativo de Vocabulário com Repetição Espaçada
 
 Este é um aplicativo móvel desenvolvido com React Native e Expo que ajuda os usuários a aprender e memorizar palavras em inglês usando o método de repetição espaçada, baseado na curva de esquecimento de Ebbinghaus.
