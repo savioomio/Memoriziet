@@ -2,7 +2,8 @@
   "expo": {
     "newArchEnabled": true,
     "name": "Memoriziet",
-    "slug": "Memoriziet",
+    "slug": "memoriziet",
+    "owner": "savioomiodev",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icone.png",
@@ -22,7 +23,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.jpg",
         "backgroundColor": "#359894"
-      }
+      },
+      "package": "com.savioomiodev.Memoriziet"
     },
     "web": {
       "favicon": "./assets/logo.jpg"
@@ -35,6 +37,11 @@
           "color": "#359894"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "940ecd2e-c9a3-4e40-9fad-9af3d63b1a21"
+      }
+    }
   }
 }
