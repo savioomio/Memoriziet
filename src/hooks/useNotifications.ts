@@ -85,7 +85,7 @@ export const useNotifications = () => {
       // Cancela notificações agendadas anteriormente
       await Notifications.cancelAllScheduledNotificationsAsync();
       
-      // Agenda a nova notificação
+      // Agenda a nova notificação usando o trigger DailyTriggerInput
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Hora de revisar seu vocabulário!',
@@ -96,7 +96,7 @@ export const useNotifications = () => {
           hour: notificationTime.getHours(),
           minute: notificationTime.getMinutes(),
           repeats: true,
-        },
+        }        
       });
     } catch (error) {
       console.error('Erro ao agendar notificação:', error);
@@ -114,7 +114,7 @@ export const useNotifications = () => {
  * Registra o dispositivo para receber notificações push
  */
 async function registerForPushNotificationsAsync(): Promise<string | undefined> {
-  if (!Platform.OS === 'web') {
+  if (Platform.OS !== 'web') {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     

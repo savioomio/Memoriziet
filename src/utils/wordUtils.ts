@@ -1,4 +1,4 @@
-import { generateUUID } from './uuid';
+import { generateUUID, generateUUIDSync } from './uuid';
 import { Word } from '../types';
 
 // Definir o tipo de uma entrada de palavra
@@ -11,7 +11,6 @@ type VocabularyEntry = {
 interface VocabularyByDay {
   [key: string]: VocabularyEntry[]; // Isso permite indexação por string
 }
-
 
 // Organiza palavras por dia de aprendizado
 export const vocabularyByDay: VocabularyByDay = {
@@ -1338,6 +1337,7 @@ export const getWordsForDay = (day: number): VocabularyEntry[] => {
 /**
  * Cria um conjunto inicial de palavras para o aplicativo
  * Carrega todas as palavras do vocabulário organizado por dia
+ * Usa a versão síncrona do generateUUID para facilitar o uso
  */
 export const createInitialWords = (): Word[] => {
   const words: Word[] = [];
@@ -1352,7 +1352,7 @@ export const createInitialWords = (): Word[] => {
     // Adiciona cada palavra do dia
     dayWords.forEach(({ word, translations }) => {
       words.push({
-        id: generateUUID(),
+        id: generateUUIDSync(), // Usa a versão síncrona
         word: word,
         translation: translations.join(', '), // Junta as traduções com vírgula
         learned: false,
@@ -1376,7 +1376,7 @@ export const getNextDayWords = (lastCompletedDay: number): Word[] => {
   const dayWords = getWordsForDay(nextDay);
   
   return dayWords.map(({ word, translations }) => ({
-    id: generateUUID(),
+    id: generateUUIDSync(), // Usa a versão síncrona
     word: word,
     translation: translations.join(', '),
     learned: false,

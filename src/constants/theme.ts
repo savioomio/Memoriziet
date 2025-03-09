@@ -87,18 +87,77 @@ export const COLORS = {
   }
 };
 
-// Utilitário para escurecer uma cor (simulação)
-function darkenColor(color: string, amount: number): string {
-  // Esta é uma implementação simplificada apenas para demonstração
-  // Em uma implementação real, você usaria uma biblioteca como color ou polished
-  return color;
+/**
+ * Converte uma cor hexadecimal para componentes RGB
+ * @param hex A cor em formato hexadecimal (#RRGGBB)
+ * @returns Objeto com componentes r, g, b
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  // Remover o # do início, se presente
+  const cleanHex = hex.charAt(0) === '#' ? hex.substring(1) : hex;
+  
+  // Converter para números decimais
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  
+  return { r, g, b };
 }
 
-// Utilitário para clarear uma cor (simulação)
+/**
+ * Converte componentes RGB para formato hexadecimal
+ * @param r Componente vermelho (0-255)
+ * @param g Componente verde (0-255)
+ * @param b Componente azul (0-255)
+ * @returns Cor no formato hexadecimal (#RRGGBB)
+ */
+function rgbToHex(r: number, g: number, b: number): string {
+  // Garantir que os valores estejam na faixa 0-255
+  r = Math.max(0, Math.min(255, Math.round(r)));
+  g = Math.max(0, Math.min(255, Math.round(g)));
+  b = Math.max(0, Math.min(255, Math.round(b)));
+  
+  // Converter para formato hexadecimal e garantir que tenha 2 dígitos
+  const rHex = r.toString(16).padStart(2, '0');
+  const gHex = g.toString(16).padStart(2, '0');
+  const bHex = b.toString(16).padStart(2, '0');
+  
+  return `#${rHex}${gHex}${bHex}`;
+}
+
+/**
+ * Escurece uma cor hexadecimal por uma quantidade específica
+ * @param color Cor em formato hexadecimal (#RRGGBB)
+ * @param amount Quantidade de escurecimento (0-1)
+ * @returns Cor escurecida em formato hexadecimal
+ */
+function darkenColor(color: string, amount: number): string {
+  const { r, g, b } = hexToRgb(color);
+  
+  // Reduzir os componentes RGB pela quantidade especificada
+  const factor = 1 - amount;
+  const newR = r * factor;
+  const newG = g * factor;
+  const newB = b * factor;
+  
+  return rgbToHex(newR, newG, newB);
+}
+
+/**
+ * Clareia uma cor hexadecimal por uma quantidade específica
+ * @param color Cor em formato hexadecimal (#RRGGBB)
+ * @param amount Quantidade de clareamento (0-1)
+ * @returns Cor clareada em formato hexadecimal
+ */
 function lightenColor(color: string, amount: number): string {
-  // Esta é uma implementação simplificada apenas para demonstração
-  // Em uma implementação real, você usaria uma biblioteca como color ou polished
-  return color;
+  const { r, g, b } = hexToRgb(color);
+  
+  // Aumentar os componentes RGB pela quantidade especificada
+  const newR = r + (255 - r) * amount;
+  const newG = g + (255 - g) * amount;
+  const newB = b + (255 - b) * amount;
+  
+  return rgbToHex(newR, newG, newB);
 }
 
 // ESTILOS COMUNS REUTILIZÁVEIS
